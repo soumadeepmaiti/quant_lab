@@ -1,4 +1,3 @@
-````markdown
 # Quantlab: Quantitative Finance Research Platform
 
 [![CI/CD](https://github.com/soumadeepmaiti/quant_lab/workflows/CI/badge.svg)](https://github.com/soumadeepmaiti/quant_lab/actions) [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -157,5 +156,3 @@ MIT License – See [LICENSE](LICENSE) for details.
 ---
 
 *Built with Python 3.11+ | Reproducible research-oriented quantitative toolkit*
-
-````
