@@ -1,4 +1,4 @@
-.PHONY: help install install-dev test lint clean backtest risk execution viz notebooks
+.PHONY: help install install-dev test lint clean backtest risk execution viz notebooks all alpha exec
 
 help:
 	@echo "Quant Lab - Commands"
@@ -44,6 +44,10 @@ viz:
 	python scripts/generate_visualizations.py
 
 all: backtest risk execution viz
+
+# Aliases for convenience
+alpha: backtest
+exec: execution
 
 # Development
 test:

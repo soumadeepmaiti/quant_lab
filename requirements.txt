@@ -1,4 +1,7 @@
-# Core Dependencies
+# Quantlab consolidated requirements (flat list)
+# Python 3.10+
+
+# Core
 pandas>=2.0.0
 numpy>=1.24.0
 scipy>=1.10.0
@@ -14,8 +17,7 @@ python-dotenv>=1.0.0
 pyarrow>=14.0.0
 tqdm>=4.65.0
 
-# Development Dependencies
-[dev]
+# Development
 pytest>=7.4.0
 pytest-cov>=4.1.0
 pytest-xdist>=3.3.0
@@ -25,17 +27,11 @@ mypy>=1.5.0
 pre-commit>=3.4.0
 ipykernel>=6.25.0
 
-# Jupyter Notebooks
-[notebooks]
+# Notebooks
 jupyter>=1.0.0
 jupyterlab>=4.0.0
 nbformat>=5.9.0
 ipywidgets>=8.1.0
 
-# Polygon API for Market Data
-[polygon]
+# Polygon API
 polygon-api-client>=1.12.0
-
-# Install all optional dependencies
-[all]
-quantlab[dev,notebooks,polygon]
