@@ -49,6 +49,15 @@ notebooks/data/cache/*
 # ===============================
 # Secrets
 # ===============================
+.env
+.env.local
+.env*.local
+
+# Do NOT ignore:
+# *.ipynb (notebooks tracked)
+# *.csv (data tracked)
+# reports/figures/* (figures tracked)
+# ===============================
 .env*
 *.pem
 secrets.yaml
