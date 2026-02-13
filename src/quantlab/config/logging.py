@@ -30,16 +30,16 @@ def setup_logging(
         Configured logger
     """
     level = level or settings.log_level
-    
+
     # Format strings
     formats = {
         "simple": "%(levelname)s | %(message)s",
         "detailed": "%(asctime)s | %(name)s | %(levelname)s | %(message)s",
         "json": '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
     }
-    
+
     log_format = formats.get(format_style, formats["simple"])
-    
+
     # Configure root logger
     logging.basicConfig(
         level=getattr(logging, level.upper()),
@@ -48,11 +48,11 @@ def setup_logging(
             logging.StreamHandler(sys.stdout)
         ]
     )
-    
+
     # Get logger for quantlab
     logger = logging.getLogger("quantlab")
     logger.setLevel(getattr(logging, level.upper()))
-    
+
     return logger
 
 

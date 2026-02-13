@@ -2,11 +2,11 @@
 Execution algorithms: VWAP, TWAP, POV.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Optional
 from dataclasses import dataclass
-from datetime import datetime
+from typing import List
+
+import numpy as np
+import pandas as pd
 
 from quantlab.microstructure.lob import LimitOrderBook
 
@@ -32,11 +32,11 @@ class VWAPExecutor:
     
     Slices large orders and executes over time to minimize impact.
     """
-    
+
     def __init__(self, order_book: LimitOrderBook):
         self.book = order_book
         self.execution_log = []
-    
+
     def execute(
         self,
         size: int,
@@ -67,49 +67,49 @@ class VWAPExecutor:
             Execution summary
         """
         initial_mid = self.book.get_mid_price()
-        
+
         base_slice = size // n_slices
         remainder = size % n_slices
-        
+
         all_trades = []
         slice_vwaps = []
         total_executed = 0
         total_value = 0
-        
+
         for i in range(n_slices):
             slice_size = base_slice + (1 if i < remainder else 0)
-            
+
             trades, slice_vwap = self.book.execute_market_order(side, slice_size)
-            
+
             slice_qty = sum(t.quantity for t in trades)
             slice_value = sum(t.price * t.quantity for t in trades)
-            
+
             all_trades.extend(trades)
             total_executed += slice_qty
             total_value += slice_value
             slice_vwaps.append(slice_vwap)
-            
+
             self.execution_log.append({
                 'slice': i + 1,
                 'size': slice_size,
                 'executed': slice_qty,
                 'vwap': slice_vwap
             })
-            
+
             # Simulate market activity
             if simulate_activity and i < n_slices - 1:
                 self._simulate_activity(activity_orders)
-        
+
         overall_vwap = total_value / total_executed if total_executed > 0 else 0
         final_mid = self.book.get_mid_price()
-        
+
         if side == 'BUY':
             slippage = overall_vwap - initial_mid if initial_mid else 0
         else:
             slippage = initial_mid - overall_vwap if initial_mid else 0
-        
+
         slippage_bps = (slippage / initial_mid * 10000) if initial_mid else 0
-        
+
         return ExecutionResult(
             total_size=size,
             executed_size=total_executed,
@@ -122,21 +122,21 @@ class VWAPExecutor:
             slice_vwaps=slice_vwaps,
             trades=all_trades
         )
-    
+
     def _simulate_activity(self, n_orders: int):
         """Simulate random market activity."""
         for _ in range(n_orders):
             side = 'BUY' if np.random.random() < 0.5 else 'SELL'
             size = int(np.random.lognormal(5, 0.5))
-            
+
             mid = self.book.get_mid_price() or 100.0
             offset = np.random.uniform(0.01, 0.05)
-            
+
             if side == 'BUY':
                 price = round(mid - offset, 2)
             else:
                 price = round(mid + offset, 2)
-            
+
             if np.random.random() < 0.8:
                 self.book.add_limit_order(side, price, size)
             else:
@@ -149,11 +149,11 @@ class TWAPExecutor:
     
     Executes equal-sized slices at fixed time intervals.
     """
-    
+
     def __init__(self, order_book: LimitOrderBook):
         self.book = order_book
         self.execution_log = []
-    
+
     def execute(
         self,
         size: int,
@@ -168,48 +168,48 @@ class TWAPExecutor:
         Equal-sized slices regardless of volume profile.
         """
         initial_mid = self.book.get_mid_price()
-        
+
         slice_size = size // n_slices
         remainder = size % n_slices
-        
+
         all_trades = []
         slice_vwaps = []
         total_executed = 0
         total_value = 0
-        
+
         for i in range(n_slices):
             current_slice = slice_size + (1 if i < remainder else 0)
-            
+
             trades, slice_vwap = self.book.execute_market_order(side, current_slice)
-            
+
             slice_qty = sum(t.quantity for t in trades)
             slice_value = sum(t.price * t.quantity for t in trades)
-            
+
             all_trades.extend(trades)
             total_executed += slice_qty
             total_value += slice_value
             slice_vwaps.append(slice_vwap)
-            
+
             self.execution_log.append({
                 'slice': i + 1,
                 'size': current_slice,
                 'executed': slice_qty,
                 'vwap': slice_vwap
             })
-            
+
             if simulate_activity and i < n_slices - 1:
                 self._simulate_activity(activity_orders)
-        
+
         overall_vwap = total_value / total_executed if total_executed > 0 else 0
         final_mid = self.book.get_mid_price()
-        
+
         if side == 'BUY':
             slippage = overall_vwap - initial_mid if initial_mid else 0
         else:
             slippage = initial_mid - overall_vwap if initial_mid else 0
-        
+
         slippage_bps = (slippage / initial_mid * 10000) if initial_mid else 0
-        
+
         return ExecutionResult(
             total_size=size,
             executed_size=total_executed,
@@ -222,18 +222,18 @@ class TWAPExecutor:
             slice_vwaps=slice_vwaps,
             trades=all_trades
         )
-    
+
     def _simulate_activity(self, n_orders: int):
         """Simulate random market activity."""
         for _ in range(n_orders):
             side = 'BUY' if np.random.random() < 0.5 else 'SELL'
             size = int(np.random.lognormal(5, 0.5))
-            
+
             mid = self.book.get_mid_price() or 100.0
             offset = np.random.uniform(0.01, 0.05)
-            
+
             price = round(mid - offset, 2) if side == 'BUY' else round(mid + offset, 2)
-            
+
             if np.random.random() < 0.8:
                 self.book.add_limit_order(side, price, size)
             else:
@@ -246,11 +246,11 @@ class POVExecutor:
     
     Executes as a fixed percentage of market volume.
     """
-    
+
     def __init__(self, order_book: LimitOrderBook):
         self.book = order_book
         self.execution_log = []
-    
+
     def execute(
         self,
         size: int,
@@ -279,52 +279,52 @@ class POVExecutor:
             Activity between slices
         """
         initial_mid = self.book.get_mid_price()
-        
+
         all_trades = []
         slice_vwaps = []
         total_executed = 0
         total_value = 0
         remaining = size
         n_slices = 0
-        
+
         while remaining > 0 and n_slices < max_slices:
             # Simulate market volume
             market_volume = activity_orders * 100  # Rough estimate
             slice_size = min(int(market_volume * participation_rate), remaining)
             slice_size = max(slice_size, 100)  # Minimum slice
-            
+
             trades, slice_vwap = self.book.execute_market_order(side, slice_size)
-            
+
             slice_qty = sum(t.quantity for t in trades)
             slice_value = sum(t.price * t.quantity for t in trades)
-            
+
             all_trades.extend(trades)
             total_executed += slice_qty
             total_value += slice_value
             slice_vwaps.append(slice_vwap)
             remaining -= slice_qty
             n_slices += 1
-            
+
             self.execution_log.append({
                 'slice': n_slices,
                 'size': slice_size,
                 'executed': slice_qty,
                 'vwap': slice_vwap
             })
-            
+
             if simulate_activity and remaining > 0:
                 self._simulate_activity(activity_orders)
-        
+
         overall_vwap = total_value / total_executed if total_executed > 0 else 0
         final_mid = self.book.get_mid_price()
-        
+
         if side == 'BUY':
             slippage = overall_vwap - initial_mid if initial_mid else 0
         else:
             slippage = initial_mid - overall_vwap if initial_mid else 0
-        
+
         slippage_bps = (slippage / initial_mid * 10000) if initial_mid else 0
-        
+
         return ExecutionResult(
             total_size=size,
             executed_size=total_executed,
@@ -337,18 +337,18 @@ class POVExecutor:
             slice_vwaps=slice_vwaps,
             trades=all_trades
         )
-    
+
     def _simulate_activity(self, n_orders: int):
         """Simulate market activity."""
         for _ in range(n_orders):
             side = 'BUY' if np.random.random() < 0.5 else 'SELL'
             size = int(np.random.lognormal(5, 0.5))
-            
+
             mid = self.book.get_mid_price() or 100.0
             offset = np.random.uniform(0.01, 0.05)
-            
+
             price = round(mid - offset, 2) if side == 'BUY' else round(mid + offset, 2)
-            
+
             if np.random.random() < 0.8:
                 self.book.add_limit_order(side, price, size)
             else:
@@ -381,7 +381,7 @@ def compare_strategies(
         Comparison of strategies
     """
     results = []
-    
+
     # Aggressive (single market order)
     book = book_factory()
     from quantlab.microstructure.impact import analyze_market_order
@@ -391,7 +391,7 @@ def compare_strategies(
         'slippage_bps': aggressive['slippage_bps'],
         'vwap': aggressive['vwap']
     })
-    
+
     # VWAP
     book = book_factory()
     vwap_exec = VWAPExecutor(book)
@@ -401,7 +401,7 @@ def compare_strategies(
         'slippage_bps': vwap_result.slippage_bps,
         'vwap': vwap_result.vwap
     })
-    
+
     # TWAP
     book = book_factory()
     twap_exec = TWAPExecutor(book)
@@ -411,8 +411,8 @@ def compare_strategies(
         'slippage_bps': twap_result.slippage_bps,
         'vwap': twap_result.vwap
     })
-    
+
     df = pd.DataFrame(results)
     df['savings_vs_aggressive'] = df.iloc[0]['slippage_bps'] - df['slippage_bps']
-    
+
     return df

@@ -2,17 +2,17 @@
 Backtesting engine for factor strategies.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, Optional, Any
 from dataclasses import dataclass
+from typing import Dict, Optional
 
-from quantlab.alpha.portfolio import (
-    construct_long_short,
-    calculate_portfolio_returns,
-    rebalance_weights
-)
+import pandas as pd
+
 from quantlab.alpha.evaluation import calculate_metrics
+from quantlab.alpha.portfolio import (
+    calculate_portfolio_returns,
+    construct_long_short,
+    rebalance_weights,
+)
 
 
 @dataclass
@@ -24,7 +24,7 @@ class BacktestResult:
     long_weights: pd.DataFrame
     short_weights: pd.DataFrame
     metrics: Dict[str, float]
-    
+
     def __repr__(self):
         return (
             f"BacktestResult(\n"
@@ -73,27 +73,27 @@ def run_long_short(
     long_w, short_w = construct_long_short(
         factor, top_pct, bottom_pct, weighting
     )
-    
+
     # Apply rebalancing
     long_w = rebalance_weights(long_w, rebalance_freq)
     short_w = rebalance_weights(short_w, rebalance_freq)
-    
+
     # Calculate returns
     portfolio_ret = calculate_portfolio_returns(long_w, short_w, returns)
-    
+
     # Apply transaction costs
     if transaction_cost_bps > 0:
         turnover = _calculate_turnover(long_w, short_w)
         cost = turnover * transaction_cost_bps / 10000
         portfolio_ret = portfolio_ret - cost
-    
+
     # Calculate long-only and short-only returns for analysis
     long_ret = (long_w.shift(1) * returns).sum(axis=1).loc[portfolio_ret.index]
     short_ret = -(short_w.shift(1) * returns).sum(axis=1).loc[portfolio_ret.index]
-    
+
     # Calculate metrics
     metrics = calculate_metrics(portfolio_ret)
-    
+
     return BacktestResult(
         portfolio_returns=portfolio_ret,
         long_returns=long_ret,
@@ -139,29 +139,29 @@ def run_long_only(
         Backtest results
     """
     from quantlab.alpha.portfolio import construct_long_only
-    
+
     # Construct weights
     weights = construct_long_only(factor, top_pct, weighting)
     weights = rebalance_weights(weights, rebalance_freq)
-    
+
     # Calculate returns
     portfolio_ret = (weights.shift(1) * returns).sum(axis=1).dropna()
-    
+
     # Apply costs
     if transaction_cost_bps > 0:
         turnover = weights.diff().abs().sum(axis=1) / 2
         cost = turnover * transaction_cost_bps / 10000
         portfolio_ret = portfolio_ret - cost.loc[portfolio_ret.index]
-    
+
     # Metrics
     metrics = calculate_metrics(portfolio_ret)
-    
+
     # Add alpha vs benchmark if provided
     if benchmark_returns is not None:
         common_idx = portfolio_ret.index.intersection(benchmark_returns.index)
         excess_ret = portfolio_ret.loc[common_idx] - benchmark_returns.loc[common_idx]
         metrics['alpha'] = excess_ret.mean() * 252
-    
+
     return BacktestResult(
         portfolio_returns=portfolio_ret,
         long_returns=portfolio_ret,
@@ -203,7 +203,7 @@ def compare_strategies(
         row = {'strategy': name}
         row.update(result.metrics)
         rows.append(row)
-    
+
     return pd.DataFrame(rows).set_index('strategy')
 
 
@@ -234,14 +234,14 @@ def rolling_backtest(
     """
     results = []
     dates = factor.index[window:]
-    
+
     for i, end_date in enumerate(dates):
         start_idx = i
         end_idx = i + window
-        
+
         factor_window = factor.iloc[start_idx:end_idx]
         returns_window = returns.iloc[start_idx:end_idx]
-        
+
         try:
             result = run_long_short(factor_window, returns_window, **kwargs)
             results.append({
@@ -250,5 +250,5 @@ def rolling_backtest(
             })
         except Exception:
             continue
-    
+
     return pd.DataFrame(results).set_index('date')

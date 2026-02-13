@@ -2,9 +2,10 @@
 GARCH volatility modeling and forecasting.
 """
 
-import pandas as pd
+from typing import Dict, Tuple
+
 import numpy as np
-from typing import Dict, Optional, Tuple
+import pandas as pd
 from arch import arch_model
 
 
@@ -44,7 +45,7 @@ def fit(
         scaled = returns * 100
     else:
         scaled = returns
-    
+
     model = arch_model(
         scaled,
         vol='Garch',
@@ -52,25 +53,25 @@ def fit(
         q=q,
         dist=dist
     )
-    
+
     result = model.fit(disp='off')
-    
+
     # Extract parameters
     params = result.params.to_dict()
-    
+
     # Calculate persistence
     alpha = params.get('alpha[1]', 0)
     beta = params.get('beta[1]', 0)
     persistence = alpha + beta
-    
+
     # Long-run volatility
     omega = params.get('omega', 0)
     if rescale:
         omega = omega / 10000  # Convert back
-    
+
     long_run_var = omega / (1 - persistence) if persistence < 1 else np.nan
     long_run_vol = np.sqrt(long_run_var) * np.sqrt(252) if not np.isnan(long_run_var) else np.nan
-    
+
     parameters = {
         'omega': omega,
         'alpha': alpha,
@@ -81,7 +82,7 @@ def fit(
         'aic': result.aic,
         'bic': result.bic
     }
-    
+
     return result, parameters
 
 
@@ -108,14 +109,14 @@ def forecast(
         Volatility forecasts
     """
     forecast_result = model_result.forecast(horizon=horizon)
-    
+
     variance = forecast_result.variance.iloc[-1]
-    
+
     if rescale:
         variance = variance / 10000
-    
+
     volatility = np.sqrt(variance)
-    
+
     return pd.DataFrame({
         'variance': variance,
         'volatility': volatility,
@@ -171,10 +172,10 @@ def conditional_volatility(
         Conditional volatility time series
     """
     cond_vol = model_result.conditional_volatility
-    
+
     if rescale:
         cond_vol = cond_vol / 100
-    
+
     return cond_vol
 
 
@@ -231,9 +232,9 @@ def compare_models(
             'GARCH(2,1)': (2, 1),
             'GARCH(2,2)': (2, 2)
         }
-    
+
     results = []
-    
+
     for name, (p, q) in models.items():
         try:
             _, params = fit(returns, p, q)
@@ -252,11 +253,11 @@ def compare_models(
                 'q': q,
                 'error': str(e)
             })
-    
+
     df = pd.DataFrame(results)
-    
+
     # Rank by AIC
     if 'aic' in df.columns:
         df = df.sort_values('aic')
-    
+
     return df

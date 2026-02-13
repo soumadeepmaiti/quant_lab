@@ -2,12 +2,13 @@
 Data loaders for various data formats.
 """
 
-from typing import List, Optional, Union
 from pathlib import Path
+from typing import List, Optional, Union
+
 import pandas as pd
 import yfinance as yf
 
-from quantlab.config import settings, get_logger
+from quantlab.config import get_logger, settings
 from quantlab.data.polygon_client import PolygonClient
 
 logger = get_logger(__name__)
@@ -39,7 +40,7 @@ def load_daily_bars_yf(
         MultiIndex DataFrame with (date, ticker) or columns per ticker
     """
     logger.info(f"Downloading data for {len(tickers)} tickers via Yahoo Finance")
-    
+
     data = yf.download(
         tickers=tickers,
         start=start_date,
@@ -48,7 +49,7 @@ def load_daily_bars_yf(
         auto_adjust=adjusted,
         progress=False
     )
-    
+
     return data
 
 
@@ -78,9 +79,9 @@ def load_daily_bars_polygon(
         Price data
     """
     client = PolygonClient()
-    
+
     all_data = {}
-    
+
     for ticker in tickers:
         logger.info(f"Fetching {ticker} from Polygon")
         try:
@@ -95,10 +96,10 @@ def load_daily_bars_polygon(
                 all_data[ticker] = df['close']
         except Exception as e:
             logger.warning(f"Failed to fetch {ticker}: {e}")
-    
+
     if not all_data:
         return pd.DataFrame()
-    
+
     return pd.DataFrame(all_data)
 
 
@@ -129,7 +130,7 @@ def load_prices(
     """
     start_date = start_date or settings.default_start_date
     end_date = end_date or settings.default_end_date
-    
+
     if source == 'polygon':
         return load_daily_bars_polygon(tickers, start_date, end_date)
     else:

@@ -1,26 +1,21 @@
 """Data module - loaders, cleaners, and API clients."""
 
-from quantlab.data.polygon_client import PolygonClient, get_polygon_client
-from quantlab.data.universe import (
-    get_universe,
-    get_universe_with_metadata,
-    DOW30,
-    SP500_SAMPLE,
-    SECTOR_MAP
-)
+from quantlab.data.cleaners import align_data, clean_prices, detect_outliers, winsorize_returns
 from quantlab.data.loaders import (
+    load_daily_bars_polygon,
+    load_daily_bars_yf,
+    load_from_parquet,
     load_prices,
     load_returns,
-    load_daily_bars_yf,
-    load_daily_bars_polygon,
-    load_from_parquet,
-    save_to_parquet
+    save_to_parquet,
 )
-from quantlab.data.cleaners import (
-    clean_prices,
-    detect_outliers,
-    winsorize_returns,
-    align_data
+from quantlab.data.polygon_client import PolygonClient, get_polygon_client
+from quantlab.data.universe import (
+    DOW30,
+    SECTOR_MAP,
+    SP500_SAMPLE,
+    get_universe,
+    get_universe_with_metadata,
 )
 
 __all__ = [

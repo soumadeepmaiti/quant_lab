@@ -2,10 +2,11 @@
 Value at Risk (VaR) calculations.
 """
 
-import pandas as pd
-import numpy as np
-from scipy.stats import norm
 from typing import Dict, List, Optional, Union
+
+import numpy as np
+import pandas as pd
+from scipy.stats import norm
 
 
 def historical(
@@ -39,10 +40,10 @@ def historical(
         portfolio_returns = (returns * weights).sum(axis=1)
     else:
         portfolio_returns = returns
-    
+
     alpha = 1 - confidence
     var = -np.percentile(portfolio_returns.dropna(), alpha * 100)
-    
+
     return var
 
 
@@ -74,7 +75,7 @@ def parametric(
     if isinstance(returns, pd.DataFrame):
         if weights is None:
             weights = np.ones(len(returns.columns)) / len(returns.columns)
-        
+
         # Portfolio mean and variance
         mu = (returns.mean() * weights).sum()
         cov_matrix = returns.cov()
@@ -83,10 +84,10 @@ def parametric(
     else:
         mu = returns.mean()
         sigma = returns.std()
-    
+
     z = norm.ppf(1 - confidence)
     var = -(mu + z * sigma)
-    
+
     return var
 
 
@@ -122,30 +123,30 @@ def monte_carlo(
     """
     if seed is not None:
         np.random.seed(seed)
-    
+
     if isinstance(returns, pd.DataFrame):
         if weights is None:
             weights = np.ones(len(returns.columns)) / len(returns.columns)
-        
+
         # Simulate from multivariate normal
         mean_returns = returns.mean().values
         cov_matrix = returns.cov().values
-        
+
         simulated = np.random.multivariate_normal(
             mean=mean_returns,
             cov=cov_matrix,
             size=n_simulations
         )
-        
+
         portfolio_returns = simulated @ weights
     else:
         mu = returns.mean()
         sigma = returns.std()
         portfolio_returns = np.random.normal(mu, sigma, n_simulations)
-    
+
     alpha = 1 - confidence
     var = -np.percentile(portfolio_returns, alpha * 100)
-    
+
     return var
 
 
@@ -175,7 +176,7 @@ def calculate_all(
         VaR by method and confidence level
     """
     results = []
-    
+
     for conf in confidence_levels:
         results.append({
             'confidence': f'{int(conf*100)}%',
@@ -183,7 +184,7 @@ def calculate_all(
             'parametric': parametric(returns, conf, weights),
             'monte_carlo': monte_carlo(returns, conf, weights, n_simulations)
         })
-    
+
     return pd.DataFrame(results).set_index('confidence')
 
 
@@ -214,18 +215,18 @@ def rolling_var(
     """
     var_series = []
     dates = []
-    
+
     for i in range(window, len(returns)):
         window_returns = returns.iloc[i-window:i]
-        
+
         if method == 'parametric':
             var = parametric(window_returns, confidence)
         else:
             var = historical(window_returns, confidence)
-        
+
         var_series.append(var)
         dates.append(returns.index[i])
-    
+
     return pd.Series(var_series, index=dates, name=f'VaR_{int(confidence*100)}')
 
 
@@ -254,13 +255,13 @@ def backtest_var(
     common_idx = returns.index.intersection(var_series.index)
     actual = returns.loc[common_idx]
     var = var_series.loc[common_idx]
-    
+
     # Count breaches (actual loss > VaR)
     breaches = (-actual > var).sum()
     n_periods = len(actual)
     breach_rate = breaches / n_periods
     expected_rate = 1 - confidence
-    
+
     return {
         'n_breaches': int(breaches),
         'n_periods': n_periods,

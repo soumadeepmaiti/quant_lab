@@ -1,7 +1,8 @@
 """Pytest configuration and fixtures."""
-import pytest
 import sys
 from pathlib import Path
+
+import pytest
 
 # Add src to path
 src_path = Path(__file__).parent.parent / "src"

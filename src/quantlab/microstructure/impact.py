@@ -2,9 +2,11 @@
 Market impact models and slippage metrics.
 """
 
-import pandas as pd
+from typing import Dict, Tuple
+
 import numpy as np
-from typing import Dict, Optional, Tuple
+import pandas as pd
+
 from quantlab.microstructure.lob import LimitOrderBook
 
 
@@ -35,16 +37,16 @@ def analyze_market_order(
     pre_spread = book.get_spread()
     pre_bid, _ = book.get_best_bid()
     pre_ask, _ = book.get_best_ask()
-    
+
     # Execute
     trades, vwap = book.execute_market_order(side, size)
-    
+
     # Post-trade state
     post_mid = book.get_mid_price()
     post_spread = book.get_spread()
-    
+
     total_executed = sum(t.quantity for t in trades)
-    
+
     # Calculate slippage
     if side == 'BUY':
         slippage_vs_mid = vwap - pre_mid if pre_mid else 0
@@ -52,9 +54,9 @@ def analyze_market_order(
     else:
         slippage_vs_mid = pre_mid - vwap if pre_mid else 0
         slippage_vs_best = pre_bid - vwap if pre_bid else 0
-    
+
     price_impact = abs(post_mid - pre_mid) if (post_mid and pre_mid) else 0
-    
+
     return {
         'order_size': size,
         'executed_size': total_executed,
@@ -164,14 +166,14 @@ def almgren_chriss_impact(
         (temporary_impact, permanent_impact)
     """
     participation = size / daily_volume
-    
+
     # Permanent impact (linear)
     permanent = gamma * participation
-    
+
     # Temporary impact (depends on execution speed)
     execution_rate = size / (time_horizon * daily_volume)
     temporary = eta * volatility * np.sqrt(execution_rate)
-    
+
     return temporary, permanent
 
 
@@ -205,15 +207,15 @@ def implementation_shortfall(
     total_size = execution_sizes.sum()
     total_value = (execution_prices * execution_sizes).sum()
     vwap = total_value / total_size if total_size > 0 else 0
-    
+
     if side == 'BUY':
         shortfall = vwap - decision_price
     else:
         shortfall = decision_price - vwap
-    
+
     shortfall_pct = shortfall / decision_price if decision_price > 0 else 0
     shortfall_bps = shortfall_pct * 10000
-    
+
     return {
         'decision_price': decision_price,
         'vwap': vwap,
@@ -248,7 +250,7 @@ def impact_by_size(
         Impact metrics by size
     """
     results = []
-    
+
     for size in sizes:
         book = book_factory()
         metrics = analyze_market_order(book, size, side)
@@ -258,5 +260,5 @@ def impact_by_size(
             'impact_bps': metrics['impact_bps'],
             'vwap': metrics['vwap']
         })
-    
+
     return pd.DataFrame(results)

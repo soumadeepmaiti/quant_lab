@@ -2,9 +2,10 @@
 Factor calculation functions for alpha research.
 """
 
-import pandas as pd
-import numpy as np
 from typing import Optional
+
+import numpy as np
+import pandas as pd
 
 
 def momentum(
@@ -61,13 +62,13 @@ def rsi(
     delta = prices.diff()
     gains = delta.clip(lower=0)
     losses = (-delta).clip(lower=0)
-    
+
     avg_gain = gains.rolling(window=window, min_periods=window).mean()
     avg_loss = losses.rolling(window=window, min_periods=window).mean()
-    
+
     rs = avg_gain / (avg_loss + 1e-10)
     rsi_values = 100 - (100 / (1 + rs))
-    
+
     return rsi_values
 
 
@@ -94,10 +95,10 @@ def volatility(
         Volatility values
     """
     vol = returns.rolling(window=window, min_periods=window).std()
-    
+
     if annualize:
         vol = vol * np.sqrt(252)
-    
+
     return vol
 
 
@@ -154,13 +155,13 @@ def beta(
         Beta values
     """
     betas = pd.DataFrame(index=returns.index, columns=returns.columns)
-    
+
     market_var = market_returns.rolling(window=window).var()
-    
+
     for col in returns.columns:
         cov = returns[col].rolling(window=window).cov(market_returns)
         betas[col] = cov / market_var
-    
+
     return betas.astype(float)
 
 
@@ -191,7 +192,7 @@ def value_proxy(
     """
     if earnings is not None:
         return earnings / prices
-    
+
     # Use inverse momentum as rough proxy for value
     mom = momentum(prices, lookback=lookback)
     return -mom  # Negative momentum = "value" stocks
@@ -221,7 +222,7 @@ def size(
     else:
         # Use price as proxy (assuming similar share counts)
         market_cap = prices
-    
+
     # Negative log so small stocks rank higher (SMB)
     return -np.log(market_cap)
 
@@ -321,12 +322,12 @@ def composite_factor(
     """
     if weights is None:
         weights = {name: 1.0 / len(factors) for name in factors}
-    
+
     if method == 'rank_average':
         # Convert to percentile ranks and average
         ranked = {name: df.rank(axis=1, pct=True) for name, df in factors.items()}
         composite = sum(ranked[name] * weights[name] for name in factors)
-    
+
     elif method == 'z_score':
         # Z-score each factor and average
         z_scored = {}
@@ -335,8 +336,8 @@ def composite_factor(
             std = df.std(axis=1)
             z_scored[name] = df.sub(mean, axis=0).div(std + 1e-10, axis=0)
         composite = sum(z_scored[name] * weights[name] for name in factors)
-    
+
     else:  # weighted_sum
         composite = sum(factors[name] * weights[name] for name in factors)
-    
+
     return composite

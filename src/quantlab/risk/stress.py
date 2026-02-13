@@ -2,11 +2,10 @@
 Stress testing scenarios and engine.
 """
 
-import pandas as pd
-import numpy as np
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
+import pandas as pd
 
 # Pre-defined stress scenarios
 SCENARIOS = {
@@ -86,7 +85,7 @@ class StressTestResult:
     portfolio_return: float
     dollar_loss: float
     contributions: Dict[str, float]
-    
+
     def __repr__(self):
         return (
             f"StressTestResult(\n"
@@ -125,23 +124,23 @@ def run_scenario(
     # Default sector mapping
     if ticker_sectors is None:
         ticker_sectors = _default_sector_mapping()
-    
+
     sector_shocks = scenario.get('sector_shocks', {})
     market_shock = scenario.get('market_shock', -0.10)
-    
+
     portfolio_return = 0.0
     contributions = {}
-    
+
     for ticker, weight in portfolio.items():
         sector = ticker_sectors.get(ticker, 'other')
         shock = sector_shocks.get(sector, market_shock)
-        
+
         contribution = weight * shock
         portfolio_return += contribution
         contributions[ticker] = contribution
-    
+
     dollar_loss = -portfolio_return * portfolio_value
-    
+
     return StressTestResult(
         scenario_name=scenario.get('name', 'Unknown'),
         description=scenario.get('description', ''),
@@ -178,15 +177,15 @@ def run_all(
     """
     if scenarios is None:
         scenarios = SCENARIOS
-    
+
     results = {}
-    
+
     for scenario_key, scenario in scenarios.items():
         result = run_scenario(
             portfolio, scenario, portfolio_value, ticker_sectors
         )
         results[scenario_key] = result
-    
+
     return results
 
 
@@ -251,19 +250,19 @@ def sensitivity_analysis(
     """
     if shock_range is None:
         shock_range = [-0.05, -0.10, -0.15, -0.20, -0.25, -0.30]
-    
+
     results = []
-    
+
     for shock in shock_range:
         portfolio_return = sum(w * shock for w in portfolio.values())
         dollar_loss = -portfolio_return * portfolio_value
-        
+
         results.append({
             'market_shock': shock,
             'portfolio_return': portfolio_return,
             'dollar_loss': dollar_loss
         })
-    
+
     return pd.DataFrame(results)
 
 
@@ -290,7 +289,7 @@ def compare_to_var(
         Comparison table
     """
     var_dollar = var_99 * portfolio_value
-    
+
     rows = []
     for name, result in stress_results.items():
         rows.append({
@@ -299,7 +298,7 @@ def compare_to_var(
             'dollar_loss': result.dollar_loss,
             'vs_var_99': result.dollar_loss / var_dollar if var_dollar > 0 else 0
         })
-    
+
     return pd.DataFrame(rows)
 
 

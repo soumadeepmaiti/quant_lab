@@ -1,36 +1,31 @@
 """Microstructure module - LOB, signals, and impact analysis."""
 
-from quantlab.microstructure.lob import (
-    LimitOrderBook,
-    Order,
-    Trade,
-    initialize_book
-)
-from quantlab.microstructure.signals import (
-    order_flow_imbalance,
-    calculate_ofi_from_book,
-    relative_spread,
-    depth_imbalance,
-    vpin,
-    kyle_lambda,
-    trade_flow_toxicity
-)
 from quantlab.microstructure.impact import (
-    analyze_market_order,
-    square_root_impact,
-    linear_impact,
     almgren_chriss_impact,
+    analyze_market_order,
+    impact_by_size,
     implementation_shortfall,
-    impact_by_size
+    linear_impact,
+    square_root_impact,
 )
+from quantlab.microstructure.lob import LimitOrderBook, Order, Trade, initialize_book
 from quantlab.microstructure.regression import (
+    ImpactRegressionResult,
+    adverse_selection_measure,
     estimate_kyle_lambda,
     estimate_power_law_impact,
     permanent_transitory_decomposition,
-    adverse_selection_measure,
-    toxicity_index,
     rolling_impact_estimation,
-    ImpactRegressionResult
+    toxicity_index,
+)
+from quantlab.microstructure.signals import (
+    calculate_ofi_from_book,
+    depth_imbalance,
+    kyle_lambda,
+    order_flow_imbalance,
+    relative_spread,
+    trade_flow_toxicity,
+    vpin,
 )
 
 __all__ = [

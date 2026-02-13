@@ -13,10 +13,11 @@ References:
 - Kissell & Glantz (2003) - "Optimal Trading Strategies"
 """
 
+from dataclasses import dataclass
+from typing import Dict, List
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple, Union
-from dataclasses import dataclass
 
 from quantlab.config import get_logger
 
@@ -32,7 +33,7 @@ class ISDecomposition:
     timing_cost: float        # Timing/delay cost
     opportunity_cost: float   # Unfilled portion cost
     execution_rate: float     # Percentage of order filled
-    
+
     # Per-share costs (in bps)
     spread_bps: float
     impact_bps: float
@@ -99,54 +100,54 @@ def implementation_shortfall(
     executed_size = np.sum(execution_sizes)
     unfilled_size = total_order_size - executed_size
     execution_rate = executed_size / total_order_size if total_order_size > 0 else 0
-    
+
     # Average execution price
     if executed_size > 0:
         vwap = np.sum(execution_prices * execution_sizes) / executed_size
     else:
         vwap = decision_price
-    
+
     # Direction multiplier
     sign = 1 if side.upper() == 'BUY' else -1
-    
+
     # Paper return (what we would have made if executed at decision price)
     paper_return = sign * (final_price - decision_price) * total_order_size
-    
+
     # Actual return (what we actually made)
     actual_return = sign * (final_price - vwap) * executed_size
-    
+
     # Total Implementation Shortfall
     total_is = paper_return - actual_return
-    
+
     # --- Cost Decomposition ---
-    
+
     # 1. Spread Cost: immediate cost of crossing the spread
     half_spread = bid_ask_spread / 2
     spread_cost = half_spread * executed_size
-    
+
     # 2. Impact Cost: price moved due to our trading
     # Estimated as execution price vs mid-price at execution time
     # Simplified: difference between VWAP and (decision_price + half_spread)
     expected_price = decision_price + sign * half_spread
     impact_cost = sign * (vwap - expected_price) * executed_size
     impact_cost = max(0, impact_cost)  # Impact should be non-negative
-    
+
     # 3. Timing Cost: price drift during execution
     # Price change from decision to end, minus what we captured
     price_drift = sign * (final_price - decision_price)
     timing_cost = price_drift * executed_size - (final_price - vwap) * executed_size * sign
     timing_cost = max(0, timing_cost)
-    
+
     # 4. Opportunity Cost: missed profit on unfilled shares
     opportunity_cost = sign * (final_price - decision_price) * unfilled_size
     opportunity_cost = max(0, opportunity_cost)  # Only if favorable price move
-    
+
     # Convert to basis points
     spread_bps = (spread_cost / (decision_price * executed_size)) * 10000 if executed_size > 0 else 0
     impact_bps = (impact_cost / (decision_price * executed_size)) * 10000 if executed_size > 0 else 0
     timing_bps = (timing_cost / (decision_price * executed_size)) * 10000 if executed_size > 0 else 0
     total_bps = spread_bps + impact_bps + timing_bps
-    
+
     return ISDecomposition(
         total_is=total_is,
         spread_cost=spread_cost,
@@ -189,15 +190,15 @@ def vwap_benchmark(
     # Our VWAP
     our_size = np.sum(execution_sizes)
     our_vwap = np.sum(execution_prices * execution_sizes) / our_size if our_size > 0 else 0
-    
+
     # Market VWAP
     total_volume = np.sum(market_volumes)
     market_vwap = np.sum(market_prices * market_volumes) / total_volume if total_volume > 0 else 0
-    
+
     # VWAP slippage
     slippage = our_vwap - market_vwap
     slippage_bps = (slippage / market_vwap) * 10000 if market_vwap > 0 else 0
-    
+
     return {
         'our_vwap': our_vwap,
         'market_vwap': market_vwap,
@@ -234,12 +235,12 @@ def arrival_price_benchmark(
     """
     total_size = np.sum(execution_sizes)
     vwap = np.sum(execution_prices * execution_sizes) / total_size if total_size > 0 else 0
-    
+
     sign = 1 if side.upper() == 'BUY' else -1
-    
+
     slippage = sign * (vwap - arrival_price)
     slippage_bps = (slippage / arrival_price) * 10000
-    
+
     return {
         'vwap': vwap,
         'arrival_price': arrival_price,
@@ -278,14 +279,14 @@ def execution_quality_metrics(
         Quality metrics
     """
     n_executions = len(execution_prices)
-    
+
     if n_executions == 0:
         return {}
-    
+
     # Mid price at each execution
     mid_prices = (best_bid + best_ask) / 2
     spreads = best_ask - best_bid
-    
+
     # Price improvement analysis
     if side.upper() == 'BUY':
         # Buy: better if execution < ask
@@ -295,16 +296,16 @@ def execution_quality_metrics(
         # Sell: better if execution > bid
         reference = best_bid
         improvement = execution_prices - reference
-    
+
     # Effective spread = 2 × |execution - mid|
     effective_spread = 2 * np.abs(execution_prices - mid_prices)
-    
+
     # Realized spread (with price 5 periods later - simplified)
     # This would need future prices, so we estimate
-    
+
     # Fill rate at each price level
     size_weighted_improvement = np.sum(improvement * execution_sizes) / np.sum(execution_sizes)
-    
+
     return {
         'n_executions': n_executions,
         'avg_improvement': np.mean(improvement),
@@ -339,20 +340,20 @@ def cost_curve_analysis(
         Cost curve data
     """
     results = []
-    
+
     for size in order_sizes:
         exec_prices, exec_sizes = execution_func(size)
-        
+
         if len(exec_prices) == 0:
             continue
-        
+
         vwap = np.sum(exec_prices * exec_sizes) / np.sum(exec_sizes)
         slippage = vwap - base_price
         slippage_bps = slippage / base_price * 10000
-        
+
         # Impact per share
         impact_per_share = slippage / size if size > 0 else 0
-        
+
         results.append({
             'order_size': size,
             'vwap': vwap,
@@ -361,7 +362,7 @@ def cost_curve_analysis(
             'impact_per_share': impact_per_share,
             'total_cost': slippage * size
         })
-    
+
     return pd.DataFrame(results)
 
 
@@ -388,18 +389,18 @@ def compare_execution_strategies(
         Comparison across strategies and sizes
     """
     all_results = []
-    
+
     for strategy_name, exec_func in strategies.items():
         for size in order_sizes:
             try:
                 exec_prices, exec_sizes = exec_func(size)
-                
+
                 if len(exec_prices) == 0:
                     continue
-                
+
                 vwap = np.sum(exec_prices * exec_sizes) / np.sum(exec_sizes)
                 slippage_bps = (vwap - base_price) / base_price * 10000
-                
+
                 all_results.append({
                     'strategy': strategy_name,
                     'order_size': size,
@@ -409,7 +410,7 @@ def compare_execution_strategies(
             except Exception as e:
                 logger.warning(f"Strategy {strategy_name} failed for size {size}: {e}")
                 continue
-    
+
     return pd.DataFrame(all_results)
 
 
@@ -489,16 +490,16 @@ def liquidity_regime_analysis(
     """
     # Define regimes based on spread percentiles
     spread_pct = np.percentile(spreads, [33, 67])
-    
+
     results = []
-    
+
     for i, is_result in enumerate(execution_results):
         if i >= len(spreads):
             continue
-        
+
         spread = spreads[i]
         volume = volumes[i]
-        
+
         # Classify regime
         if spread <= spread_pct[0]:
             regime = 'Tight Spread'
@@ -506,7 +507,7 @@ def liquidity_regime_analysis(
             regime = 'Normal Spread'
         else:
             regime = 'Wide Spread'
-        
+
         results.append({
             'regime': regime,
             'spread': spread,
@@ -515,14 +516,14 @@ def liquidity_regime_analysis(
             'impact_bps': is_result.impact_bps,
             'spread_bps': is_result.spread_bps
         })
-    
+
     df = pd.DataFrame(results)
-    
+
     # Aggregate by regime
     summary = df.groupby('regime').agg({
         'total_bps': ['mean', 'std', 'count'],
         'impact_bps': 'mean',
         'spread_bps': 'mean'
     }).round(2)
-    
+
     return summary

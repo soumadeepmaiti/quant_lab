@@ -13,11 +13,12 @@ References:
 - Glosten & Harris (1988) - "Estimating the Components of the Bid-Ask Spread"
 """
 
+from dataclasses import dataclass
+from typing import Dict, List
+
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Optional, Tuple, Union
 from scipy import stats
-from dataclasses import dataclass
 
 from quantlab.config import get_logger
 
@@ -34,8 +35,8 @@ class ImpactRegressionResult:
     r_squared: float        # R-squared
     n_observations: int     # Sample size
     intercept: float        # Regression intercept
-    
-    
+
+
 def estimate_kyle_lambda(
     price_changes: np.ndarray,
     order_flow: np.ndarray,
@@ -82,18 +83,18 @@ def estimate_kyle_lambda(
     dp = price_changes[valid]
     ofi = order_flow[valid]
     n = len(dp)
-    
+
     if n < 30:
         return ImpactRegressionResult(
             lambda_coef=np.nan, lambda_se=np.nan, lambda_t_stat=np.nan,
             lambda_pvalue=np.nan, r_squared=np.nan, n_observations=n,
             intercept=np.nan
         )
-    
+
     # OLS regression: ΔP = α + λ × OFI
     X = np.column_stack([np.ones(n), ofi])
     y = dp
-    
+
     if method == 'ols':
         # Standard OLS
         betas = np.linalg.lstsq(X, y, rcond=None)[0]
@@ -103,25 +104,25 @@ def estimate_kyle_lambda(
         weights = 1 / (np.abs(ofi) + 1)
         W = np.diag(weights)
         betas = np.linalg.lstsq(W @ X, W @ y, rcond=None)[0]
-    
+
     intercept, lambda_coef = betas
-    
+
     # Residuals and R-squared
     y_pred = X @ betas
     residuals = y - y_pred
     ss_res = np.sum(residuals ** 2)
     ss_tot = np.sum((y - y.mean()) ** 2)
     r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
-    
+
     # Standard errors (homoskedastic)
     mse = ss_res / (n - 2)
     var_beta = mse * np.linalg.inv(X.T @ X).diagonal()
     se_lambda = np.sqrt(var_beta[1])
-    
+
     # T-statistic and p-value
     t_stat = lambda_coef / se_lambda if se_lambda > 0 else 0
     p_value = 2 * (1 - stats.t.cdf(np.abs(t_stat), df=n - 2))
-    
+
     return ImpactRegressionResult(
         lambda_coef=lambda_coef,
         lambda_se=se_lambda,
@@ -166,41 +167,41 @@ def estimate_power_law_impact(
     valid = (price_impacts > 0) & (order_sizes > 0)
     impacts = price_impacts[valid]
     sizes = order_sizes[valid]
-    
+
     n = len(impacts)
-    
+
     if n < 20:
         return {
             'alpha': np.nan, 'k': np.nan, 'alpha_se': np.nan,
             't_stat': np.nan, 'r_squared': np.nan, 'n': n
         }
-    
+
     # Log transform
     log_impact = np.log(impacts)
     log_size = np.log(sizes)
-    
+
     # OLS on logs
     X = np.column_stack([np.ones(n), log_size])
     y = log_impact
-    
+
     betas = np.linalg.lstsq(X, y, rcond=None)[0]
     log_k, alpha = betas
     k = np.exp(log_k)
-    
+
     # R-squared
     y_pred = X @ betas
     residuals = y - y_pred
     ss_res = np.sum(residuals ** 2)
     ss_tot = np.sum((y - y.mean()) ** 2)
     r_squared = 1 - ss_res / ss_tot if ss_tot > 0 else 0
-    
+
     # Standard error for alpha
     mse = ss_res / (n - 2)
     var_beta = mse * np.linalg.inv(X.T @ X).diagonal()
     se_alpha = np.sqrt(var_beta[1])
-    
+
     t_stat = (alpha - 0.5) / se_alpha  # Test H0: alpha = 0.5
-    
+
     return {
         'alpha': alpha,
         'alpha_se': se_alpha,
@@ -240,54 +241,54 @@ def permanent_transitory_decomposition(
         Decomposition results
     """
     n = len(price_changes)
-    
+
     if n < 50:
         return {'permanent': np.nan, 'transitory': np.nan, 'info_share': np.nan}
-    
+
     # Simple approach: look at price reversion after trades
     post_trade_returns = []
-    
+
     for i in range(len(order_signs) - lags):
         if order_signs[i] != 0:
             # Cumulative return over next 'lags' periods
             cum_return = np.sum(price_changes[i+1:i+1+lags])
             initial_impact = price_changes[i] * order_signs[i]  # Signed impact
             post_trade_returns.append((initial_impact, cum_return, order_signs[i]))
-    
+
     if not post_trade_returns:
         return {'permanent': np.nan, 'transitory': np.nan, 'info_share': np.nan}
-    
+
     df = pd.DataFrame(post_trade_returns, columns=['initial_impact', 'subsequent', 'direction'])
-    
+
     # Buy trades
     buys = df[df['direction'] == 1]
     sells = df[df['direction'] == -1]
-    
+
     # Average impact and reversion
     if len(buys) > 5:
         buy_impact = buys['initial_impact'].mean()
         buy_subsequent = buys['subsequent'].mean()
     else:
         buy_impact = buy_subsequent = 0
-    
+
     if len(sells) > 5:
         sell_impact = sells['initial_impact'].mean()
         sell_subsequent = sells['subsequent'].mean()
     else:
         sell_impact = sell_subsequent = 0
-    
+
     avg_impact = (abs(buy_impact) + abs(sell_impact)) / 2
     avg_reversion = (buy_subsequent + sell_subsequent) / 2  # If negative = reversal for buys
-    
+
     # Permanent = impact that remains
     # Transitory = impact that reverses
     total_impact = avg_impact
     permanent = total_impact + avg_reversion  # What remains after reversion
     transitory = -avg_reversion  # What reversed
-    
+
     # Information share = permanent / total
     info_share = permanent / total_impact if total_impact > 0 else 0
-    
+
     return {
         'permanent': permanent,
         'transitory': transitory,
@@ -327,28 +328,28 @@ def adverse_selection_measure(
         Adverse selection metrics by horizon
     """
     results = []
-    
+
     for h in horizons:
         if h >= len(mid_prices_after):
             continue
-        
+
         # Price change from trade to horizon h
         price_change = mid_prices_after[h:] - trade_prices[:-h]
         direction = trade_directions[:-h]
-        
+
         # Signed return (positive if price moved in trade direction)
         signed_return = price_change * direction
-        
+
         valid = ~np.isnan(signed_return)
         signed_return = signed_return[valid]
-        
+
         if len(signed_return) < 10:
             continue
-        
+
         mean_drift = np.mean(signed_return)
         std_drift = np.std(signed_return)
         t_stat = mean_drift / (std_drift / np.sqrt(len(signed_return))) if std_drift > 0 else 0
-        
+
         results.append({
             'horizon': h,
             'mean_drift': mean_drift,
@@ -359,7 +360,7 @@ def adverse_selection_measure(
             'adverse_selection': mean_drift > 0 and t_stat > 1.96,
             'n_trades': len(signed_return)
         })
-    
+
     return pd.DataFrame(results)
 
 
@@ -390,27 +391,27 @@ def toxicity_index(
     """
     n = len(order_flow)
     toxicity = np.zeros(n)
-    
+
     for i in range(window, n):
         window_ofi = order_flow[i-window:i]
         window_dp = price_changes[i-window:i]
-        
+
         # Volume imbalance
         buy_vol = np.sum(window_ofi[window_ofi > 0])
         sell_vol = np.sum(np.abs(window_ofi[window_ofi < 0]))
         total_vol = buy_vol + sell_vol
-        
+
         if total_vol > 0:
             imbalance = abs(buy_vol - sell_vol) / total_vol
         else:
             imbalance = 0
-        
+
         # Price variance
         price_var = np.var(window_dp) if len(window_dp) > 1 else 0
-        
+
         # Toxicity = imbalance × price variance
         toxicity[i] = imbalance * np.sqrt(price_var) * 100
-    
+
     return pd.Series(toxicity)
 
 
@@ -437,13 +438,13 @@ def rolling_impact_estimation(
         Rolling lambda estimates with confidence intervals
     """
     results = []
-    
+
     for i in range(window, len(price_changes)):
         dp = price_changes.iloc[i-window:i].values
         ofi = order_flow.iloc[i-window:i].values
-        
+
         result = estimate_kyle_lambda(dp, ofi)
-        
+
         results.append({
             'date': price_changes.index[i],
             'lambda': result.lambda_coef,
@@ -453,5 +454,5 @@ def rolling_impact_estimation(
             'r_squared': result.r_squared,
             'significant': result.lambda_pvalue < 0.05
         })
-    
+
     return pd.DataFrame(results).set_index('date')

@@ -2,7 +2,8 @@
 Universe builders for stock selection.
 """
 
-from typing import List, Dict, Optional
+from typing import List, Optional
+
 import pandas as pd
 import yfinance as yf
 
@@ -60,7 +61,7 @@ def get_universe(name: str) -> List[str]:
         List of ticker symbols
     """
     name_lower = name.lower()
-    
+
     if name_lower == 'dow30':
         return DOW30.copy()
     elif name_lower in ('sp500', 'sp500_sample'):
@@ -87,7 +88,7 @@ def get_universe_with_metadata(name: str) -> pd.DataFrame:
         Tickers with columns: symbol, name, sector, industry, market_cap
     """
     tickers = get_universe(name)
-    
+
     metadata = []
     for ticker in tickers:
         try:
@@ -102,7 +103,7 @@ def get_universe_with_metadata(name: str) -> pd.DataFrame:
         except Exception as e:
             logger.warning(f"Failed to get metadata for {ticker}: {e}")
             metadata.append({'symbol': ticker})
-    
+
     return pd.DataFrame(metadata)
 
 
@@ -129,21 +130,21 @@ def filter_by_market_cap(
         Filtered list of tickers
     """
     filtered = []
-    
+
     for ticker in tickers:
         try:
             info = yf.Ticker(ticker).info
             market_cap = info.get('marketCap', 0)
-            
+
             if min_cap and market_cap < min_cap:
                 continue
             if max_cap and market_cap > max_cap:
                 continue
-            
+
             filtered.append(ticker)
         except Exception:
             continue
-    
+
     return filtered
 
 
@@ -168,7 +169,7 @@ def get_custom_universe(
     """
     if not validate:
         return tickers
-    
+
     valid = []
     for ticker in tickers:
         try:
@@ -180,5 +181,5 @@ def get_custom_universe(
                 logger.warning(f"Invalid ticker: {ticker}")
         except Exception:
             logger.warning(f"Could not validate: {ticker}")
-    
+
     return valid
