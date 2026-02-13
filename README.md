@@ -12,7 +12,7 @@
 | **Risk** | Fat-tail aware VaR modeling | Basel GREEN zone (Kupiec LR=0.42) |
 | **Microstructure** | Market impact & optimal execution | Square-root law confirmed (α=0.48±0.03) |
 
-**Dataset:** DOW 30 (2018–2024) | **Validation:** 83 unit tests (100% pass)
+**Dataset:** DOW 30 (2018–2024) | **Validation:** Core correctness test suite with CI (expanding)
 
 ---
 
@@ -144,8 +144,31 @@ ruff check src/ --fix
 mypy src/quantlab --ignore-missing-imports
 ```
 
-**Coverage:** 83 tests across alpha, risk, microstructure, execution modules  
-**CI/CD:** GitHub Actions (Python 3.10–3.12)
+**Coverage:** Core correctness test suite across alpha, risk, microstructure, execution modules  
+**CI/CD:** GitHub Actions (Python 3.11–3.12)
+
+---
+
+## 🔬 Reproducibility & Research Discipline
+
+All analyses follow strict forward-looking principles:
+
+- **Factor Signals:** Lagged to avoid look-ahead bias; all indicators use strictly historical data
+- **Forward Returns:** Computed using *strictly future* data (no contamination from signal date)
+- **Statistical Rigor:** Newey-West HAC standard errors, bootstrap confidence intervals, multiple testing correction
+
+### Reproduce All Results
+
+```bash
+make all
+# Generates:
+#   data/processed/backtest_results.csv
+#   data/processed/risk_results.csv
+#   reports/figures/cumulative_returns.png
+#   reports/figures/rolling_volatility.png
+```
+
+This command regenerates all factor backtests, risk model evaluations, and execution studies from source data.
 
 ---
 
