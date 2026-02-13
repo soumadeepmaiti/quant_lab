@@ -3,7 +3,7 @@
 ## Getting Started
 
 1. Fork the repository
-2. Clone your fork: `git clone https://github.com/your-username/quant_lab.git`
+2. Clone your fork: `git clone https://github.com/soumadeepmaiti/quant_lab.git`
 3. Create a feature branch: `git checkout -b feature/your-feature-name`
 4. Install development dependencies: `pip install -e ".[dev]"`
 
