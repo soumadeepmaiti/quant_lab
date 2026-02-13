@@ -132,8 +132,10 @@ dmypy.json
 .DS_Store
 
 # Data files (optional - uncomment to ignore large data)
+src/quant_lab.*
 data/raw/
 data/cache/
+notebooks/data/
 *.csv
 *.pkl
 *.parquet
