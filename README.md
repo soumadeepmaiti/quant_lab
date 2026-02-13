@@ -1,6 +1,7 @@
+````markdown
 # Quantlab: Quantitative Finance Research Platform
 
-[![CI/CD](https://github.com/soumadeepmaiti/quant_lab/workflows/CI/badge.svg)](https://github.com/soumadeepmaiti/quant_lab/actions) [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI/CD](https://github.com/soumadeepmaiti/quant_lab/workflows/CI/badge.svg)](https://github.com/soumadeepmaiti/quant_lab/actions) [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/) [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 **Production-grade research platform** combining systematic factor investing, risk modeling, and market microstructure analysis.
 
@@ -8,9 +9,9 @@
 
 | **Study** | **Focus** | **Key Result** |
 |-----------|-----------|--------------|
-| **Alpha** | Momentum factor strategy validation | IC = 0.021 (t=2.3, p<0.05) |
-| **Risk** | Fat-tail aware VaR modeling | Basel GREEN zone (Kupiec LR=0.42) |
-| **Microstructure** | Market impact & optimal execution | Square-root law confirmed (α=0.48±0.03) |
+| **Alpha** | Momentum factor strategy validation | Representative IC analysis (see reports) |
+| **Risk** | Fat-tail aware VaR modeling | EVT/GPD improves tail estimation versus Normal |
+| **Microstructure** | Market impact & optimal execution | Empirical impact scaling observed in studies |
 
 **Dataset:** DOW 30 (2018–2024) | **Validation:** Core correctness test suite with CI (expanding)
 
@@ -18,20 +19,18 @@
 
 ## 📖 Quick Start
 
-### Installation (Python 3.10+)
+### Installation (Python 3.11+)
 
 ```bash
 git clone https://github.com/soumadeepmaiti/quant_lab.git
 cd quant_lab
 python -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
+pip install -e ".[dev]"
 ```
 
-For development/testing:
+For optional realtime intraday data support:
 ```bash
-pip install -e ".[dev]"      # Testing & code quality tools
-pip install -e ".[polygon]"  # Real intraday market data
-pip install -e ".[all]"      # Everything
+pip install -e ".[polygon]"
 ```
 
 ### Run Analysis
@@ -47,7 +46,7 @@ python scripts/run_risk.py
 python scripts/run_execution_study.py
 
 # Test suite
-pytest tests/ -v --cov=src/quantlab
+pytest
 ```
 
 ---
@@ -59,17 +58,12 @@ For **detailed methodology, mathematical formulation, and empirical results**, s
 ### 1. Multi-Factor Alpha Research
 - **Strategy:** Momentum (12M lookback, skip last month) long-short portfolio
 - **Validation:** Information Coefficient analysis with Newey-West HAC standard errors
-- **Insight:** Significant but regime-dependent factor; performance varies across market conditions
 
 ### 2. Quantitative Risk Engine  
 - **Models:** VaR (Historical, Parametric, Student-t, GARCH), EVT/GPD
-- **Finding:** Student-t and EVT outperform Normal VaR by 8-10% in tail estimation
-- **Application:** Basel III traffic light zone validation using Kupiec backtests
 
 ### 3. Market Microstructure & Execution
 - **Theory:** Kyle's λ model, power-law market impact scaling
-- **Result:** Square-root law empirically validated (α=0.48 vs theoretical 0.50)
-- **Optimization:** VWAP/TWAP algorithms reduce execution costs by 25-30%
 
 ---
 
@@ -91,48 +85,30 @@ quantlab/
 ## 🔧 Key Features
 
  **Real Intraday Data:** Polygon.io API integration for tick-by-tick quotes & trades  
- **Production LOB:** Full matching engine with FIFO priority matching  
+ **Production LOB:** Full matching engine with FIFO priority matching (simplified in current implementation)  
  **Statistical Rigor:** HAC robust errors, bootstrap CI, multiple testing correction  
  **Regulatory Validation:** Kupiec backtesting, Basel zones, stress scenarios  
- **Reproducible:** 83 unit tests, deterministic seeds, CI/CD on GitHub Actions  
+ **Reproducible:** Core correctness suite (run `pytest`), deterministic seeds, CI on GitHub Actions
 
 ---
 
 ## 📊 Results Summary
 
-**Alpha Performance (2018–2024):**
-- Sharpe Ratio: 0.33 | Max Drawdown: -18.3% | Win Rate: 58.3%
-- Regime analysis shows momentum crashes during COVID, thrives post-crisis
-
-**Risk Model Validation:**
-| Model | 95% VaR | Violations | Basel Zone |
-|-------|---------|-----------|-----------|
-| Normal | 1.49% | 24 | RED ✗ |
-| EVT/GPD | 1.71% | 12 | GREEN ✓ |
-
-**Execution Efficiency:**
-- Aggressive (full market order): 3.5 bps slippage
-- VWAP (10 slices): 2.6 bps (**26% savings**)
-- TWAP (10 slices): 2.5 bps (**29% savings**)
+Representative performance and risk summaries are produced by the scripts in `scripts/` and saved to `reports/` and `data/processed/` when running the pipeline. Exact numbers in the README were removed to ensure all reported metrics are reproducible from the code and data processing pipeline.
 
 ---
 
 ## 📦 Dependencies
 
-Core: `pandas`, `numpy`, `scipy`, `yfinance`, `arch`, `statsmodels`, `scikit-learn`  
-Viz: `matplotlib`, `seaborn`, `plotly`  
-API: `polygon-api-client` (optional, for real intraday data)  
-Dev: `pytest`, `black`, `ruff`, `mypy`, `jupyter`
-
-See [`requirements.txt`](requirements.txt) for complete list.
+Core and dev dependencies are defined in `pyproject.toml` and can be installed with the development extras shown above (`pip install -e ".[dev]"`).
 
 ---
 
 ## 🧪 Testing & Quality
 
 ```bash
-# Run tests with coverage
-pytest tests/ -v --cov=src/quantlab
+# Run tests
+pytest
 
 # Format code
 black src/ tests/ scripts/
@@ -144,31 +120,19 @@ ruff check src/ --fix
 mypy src/quantlab --ignore-missing-imports
 ```
 
-**Coverage:** Core correctness test suite across alpha, risk, microstructure, execution modules  
-**CI/CD:** GitHub Actions (Python 3.11–3.12)
-
 ---
 
-## 🔬 Reproducibility & Research Discipline
+**Reproducibility**:
 
-All analyses follow strict forward-looking principles:
+1. Install: `pip install -e "[dev]"`
+2. Run alpha: `python scripts/run_backtest.py`
+3. Run risk: `python scripts/run_risk.py`
+4. Run execution: `python scripts/run_execution_study.py`
+5. Run tests: `pytest`
 
-- **Factor Signals:** Lagged to avoid look-ahead bias; all indicators use strictly historical data
-- **Forward Returns:** Computed using *strictly future* data (no contamination from signal date)
-- **Statistical Rigor:** Newey-West HAC standard errors, bootstrap confidence intervals, multiple testing correction
+Notes on research hygiene: factors are lagged; forward returns use strictly future data; results are reported net of specified transaction cost assumptions.
 
-### Reproduce All Results
-
-```bash
-make all
-# Generates:
-#   data/processed/backtest_results.csv
-#   data/processed/risk_results.csv
-#   reports/figures/cumulative_returns.png
-#   reports/figures/rolling_volatility.png
-```
-
-This command regenerates all factor backtests, risk model evaluations, and execution studies from source data.
+**Limitations:** Microstructure analysis currently uses a simplified/synthetic LOB model and limited tick-level sampling; full-production trade/quote pipelines (e.g., Polygon) are optional and require API credentials. Use results as representative analyses rather than production signals.
 
 ---
 
@@ -177,24 +141,12 @@ This command regenerates all factor backtests, risk model evaluations, and execu
 - **[METHODOLOGY.md](docs/METHODOLOGY.md)** – Detailed technical writeup (8 pages) with equations, validation results, references
 - **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** – Development guidelines  
 - **[INSTALL.md](docs/INSTALL.md)** – Detailed installation instructions
-- **Notebooks:** Interactive analysis in `/notebooks/`
 
 ---
 
 ## 🤝 Contributing
 
 Contributions welcome! See [CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
-
-Quick workflow:
-```bash
-git checkout -b feature/your-feature
-pip install -e ".[dev]"       # Development tools
-black src/ tests/             # Format
-ruff check src/ --fix         # Lint
-pytest tests/ --cov           # Test
-git commit -am "feat: description"
-git push origin feature/your-feature
-```
 
 ---
 
@@ -204,20 +156,6 @@ MIT License – See [LICENSE](LICENSE) for details.
 
 ---
 
-## 📧 Contact & Citation
+*Built with Python 3.11+ | Reproducible research-oriented quantitative toolkit*
 
-Questions about methodology or implementation? Open an issue.
-
-**Citation:**
-```bibtex
-@software{quantlab2026,
-  author = {Maiti, Soumadeep},
-  title = {Quantlab: Production-Grade Quantitative Finance Research Platform},
-  year = {2026},
-  url = {https://github.com/soumadeepmaiti/quant_lab}
-}
-```
-
----
-
-*Built with Python 3.10+ | Production-grade quantitative research*
+````

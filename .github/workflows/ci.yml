@@ -20,19 +20,23 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - run: |
+      - name: Install
+        run: |
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - run: ruff check .
+      - name: Lint (ruff)
+        run: ruff check .
 
-      - run: black --check src scripts tests
+      - name: Format (black)
+        run: black --check src scripts tests
 
-      - name: Type check (non-blocking)
+      - name: Type check (mypy, non-blocking)
         continue-on-error: true
         run: mypy src/quantlab --ignore-missing-imports
 
-      - run: pytest -q --cov=src/quantlab --cov-report=term --cov-report=xml
+      - name: Tests
+        run: pytest -q
 
       - uses: actions/upload-artifact@v4
         with:
