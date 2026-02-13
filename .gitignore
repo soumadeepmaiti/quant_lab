@@ -18,7 +18,7 @@ pip-wheel-metadata/
 env/
 venv/
 
-# Testing
+# Testing / Lint
 .pytest_cache/
 .coverage
 .coverage.*
@@ -40,19 +40,11 @@ htmlcov/
 # Data
 # ===============================
 
-# Ignore large raw and cache data
+# Large raw data
 data/raw/*
 data/cache/*
-
-# Keep processed small outputs
-# (do NOT ignore all CSV)
-
-# ===============================
-# Reports
-# ===============================
-
-# Keep final figures
-# If too large, move to releases
+notebooks/data/raw/*
+notebooks/data/cache/*
 
 # ===============================
 # Secrets
