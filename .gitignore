@@ -144,7 +144,6 @@ data/cache/
 reports/figures/*
 reports/tables/*
 reports/tearsheets/*
-notebooks/data/*
 !notebooks/data/.gitkeep
 
 # Environment-specific
