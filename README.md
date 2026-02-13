@@ -188,7 +188,7 @@ Questions about methodology or implementation? Open an issue.
 **Citation:**
 ```bibtex
 @software{quantlab2026,
-  author = {Maiti, Souma Deep},
+  author = {Maiti, Soumadeep},
   title = {Quantlab: Production-Grade Quantitative Finance Research Platform},
   year = {2026},
   url = {https://github.com/soumadeepmaiti/quant_lab}
