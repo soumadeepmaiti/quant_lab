@@ -61,4 +61,4 @@ notebooks/data/cache/*
 .env*
 *.pem
 secrets.yaml
-*.sh
+*.sh.ruff_cache/

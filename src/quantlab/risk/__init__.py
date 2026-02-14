@@ -1,4 +1,4 @@
-"""Risk module - VaR, ES, GARCH, and stress testing."""
+"""Risk module - VaR, ES, GARCH, stress testing, and covariance shrinkage."""
 
 from quantlab.risk.backtest import BacktestResult as VaRBacktestResult
 from quantlab.risk.backtest import backtest_var as var_backtest_full
@@ -10,6 +10,19 @@ from quantlab.risk.backtest import (
     rolling_var_backtest,
     var_model_comparison,
     violation_clustering_analysis,
+)
+from quantlab.risk.factor_risk import (
+    compare_risk_contributions,
+    factor_risk_decomposition,
+    plot_risk_contrib_comparison,
+)
+from quantlab.risk.shrinkage import (
+    factor_model_cov,
+    ledoit_wolf_cov,
+    min_var_weights,
+    rolling_shrinkage_backtest,
+    shrink_cov,
+    shrink_to_identity,
 )
 from quantlab.risk.distributions import (
     compare_distributions,
@@ -115,4 +128,15 @@ __all__ = [
     "kurtosis_analysis",
     "fat_tail_impact_on_var",
     "volatility_model_comparison",
+    # Covariance Shrinkage (Institutional-Grade)
+    "ledoit_wolf_cov",
+    "shrink_to_identity",
+    "factor_model_cov",
+    "shrink_cov",
+    "min_var_weights",
+    "rolling_shrinkage_backtest",
+    # Factor Risk Decomposition
+    "factor_risk_decomposition",
+    "compare_risk_contributions",
+    "plot_risk_contrib_comparison",
 ]

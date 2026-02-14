@@ -6,6 +6,13 @@ from quantlab.alpha.backtest import (
     run_long_only,
     run_long_short,
 )
+from quantlab.alpha.diagnostics import (
+    plot_premia_rolling,
+    plot_premia_timeseries,
+    plot_r2_histogram,
+    plot_shrinkage_oos_vol,
+    plot_shrinkage_turnover,
+)
 from quantlab.alpha.evaluation import (
     calculate_alpha_beta,
     calculate_drawdown_series,
@@ -23,6 +30,12 @@ from quantlab.alpha.factors import (
     size,
     value_proxy,
     volatility,
+)
+from quantlab.alpha.fama_macbeth import (
+    build_monthly_panel,
+    cross_sectional_ols,
+    fama_macbeth,
+    summary_table,
 )
 from quantlab.alpha.ic import (
     calculate_forward_returns,
@@ -130,4 +143,15 @@ __all__ = [
     "jarque_bera_test",
     "factor_decay_test",
     "comprehensive_factor_statistics",
+    # Fama-MacBeth (Institutional-Grade)
+    "cross_sectional_ols",
+    "fama_macbeth",
+    "summary_table",
+    "build_monthly_panel",
+    # Diagnostics
+    "plot_premia_rolling",
+    "plot_premia_timeseries",
+    "plot_r2_histogram",
+    "plot_shrinkage_oos_vol",
+    "plot_shrinkage_turnover",
 ]

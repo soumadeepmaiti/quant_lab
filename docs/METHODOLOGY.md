@@ -356,6 +356,6 @@ This research demonstrates:
 
 ---
 
-**Author:** Souma Deep Maiti | **Date:** February 2026 | **Version:** 1.0
+**Author:** Soumadeep Maiti | **Date:** February 2026 | **Version:** 1.0
 
 *Quantlab is an open-source quantitative research platform licensed under MIT.*
